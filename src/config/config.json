@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "permanent_recall",
+    "password": "permanent_recall123",
+    "database": "permanent_recall",
+    "host": "db",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "permanent_recall",
+    "password": "permanent_recall123",
+    "database": "permanent_recall",
+    "host": "db",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "permanent_recall",
+    "password": "permanent_recall123",
+    "database": "permanent_recall",
+    "host": "db",
+    "dialect": "mongo"
+  }
+}
