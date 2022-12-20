@@ -1,6 +1,6 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
 
-type UserDocument = Document & {
+export type UserDocument = Document & {
   firstName: string;
   lastName: string;
   email: string;
@@ -8,7 +8,7 @@ type UserDocument = Document & {
   // role: string;
 };
 
-type UserInput = {
+export type UserInput = {
   firstName: UserDocument['firstName'];
   lastName: UserDocument['lastName'];
   email: UserDocument['email'];
@@ -16,7 +16,7 @@ type UserInput = {
   // role: UserDocument['role'];
 };
 
-const usersSchema = new Schema(
+const userSchema = new Schema(
   {
     firstName: {
       type: Schema.Types.String,
@@ -48,6 +48,5 @@ const usersSchema = new Schema(
   },
 );
 
-const User: Model<UserDocument> = mongoose.model<UserDocument>('User', usersSchema);
-
-export { User, UserInput, UserDocument };
+export const User: Model<UserDocument>
+  = mongoose.model<UserDocument>('User', userSchema);

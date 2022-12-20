@@ -24,7 +24,7 @@ export function badRequest(message = 'Bad Request', type = '') {
 
 interface Param {
   name: string,
-  fields: string[],
+  fields: Array< string | Param >,
   onlyOneRequired?: boolean,
 }
 
@@ -42,8 +42,8 @@ interface RequiredParamsObj {
 function handleParam(
   param: string | Param,
   parent: any,
-  onlyOneRequired = false
 ): void {
+  let onlyOneRequired = false
   let paramName = typeof param === 'string' ? param : param.name;
   if (!paramName) return;
   if (!parent[paramName])
@@ -54,7 +54,7 @@ function handleParam(
     let foundOneOfTheFields = false;
     for (let field of param.fields) {
       try {
-        handleParam(field, param);
+        handleParam(field, parent[paramName]);
         foundOneOfTheFields = true;
       } catch (message) {
         errorMessage = paramName + '. ' + message;
@@ -92,34 +92,40 @@ export function validateParams(
 ): void {
 
   if (requiredUrlParams) {
-    for (let param of requiredUrlParams.fields) {
-      try {
-        handleParam(param, req.params);
-      } catch (message) {
-        throw badRequest('Malformed url.' + message);
-      }
+    try {
+      handleParam({...requiredUrlParams, name: 'params'}, req);
+    } catch (message) {
+      throw badRequest('Malformed url.' + message);
     }
   }
 
   if (requiredQueryParams) {
-    for (let param of requiredQueryParams.fields) {
-      try {
-        handleParam(param, req.query);
-      } catch (message) {
-        throw badRequest('Malformed query.' + message);
-      }
+    try {
+      handleParam({...requiredQueryParams, name: 'query'}, req);
+    } catch (message) {
+      throw badRequest('Malformed query.' + message);
     }
   }
 
   if (requiredBodyParams) {
-    for (let param of requiredBodyParams.fields) {
-      try {
-        handleParam(param, req.body);
-      } catch (message) {
-        throw badRequest('Malformed body. ' + message);
-      }
+    try {
+      handleParam({...requiredBodyParams, name: 'body'}, req);
+    } catch (message) {
+      throw badRequest('Malformed body. ' + message);
     }
   }
+}
+
+export function accessDenied () {
+  let err = new RouterError('Access Denied');
+  err.code = 'ACCESS_DENIED';
+  return err;
+}
+
+export function unauthorized () {
+  let err = new RouterError('User is not authorized');
+  err.code = 'NOT_AUTHORIZED';
+  return err;
 }
 
 
@@ -130,6 +136,10 @@ export function handleError(
   scope = ''
 ) {
   if (err.code) {
+    if (err.code == 'ACCESS_DENIED')
+      return res.status(401).json(
+        { errorMessage: 'Invalid Credentials'});
+
     if (err.code == 'NOT_AUHTORIZED')
       return res.status(401).json(
         { errorMessage: 'You are not authorized to view this content'});

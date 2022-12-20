@@ -27,7 +27,7 @@ export function roleRouter() {
   });
 
   router.put('/:id', (req: Request, res: Response, next: NextFunction) => {
-    return getRole(req).then(
+    return updateRole(req).then(
       result => handleResult(result, res),
       (err: RouterError) => handleError(err, next, res),
     );

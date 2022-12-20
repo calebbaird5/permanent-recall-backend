@@ -4,9 +4,13 @@
     "outDir": "dist",
     "sourceMap": true,
     "module": "commonjs",
-    "target": "es2017"
+    "target": "es2017",
+    "typeRoots": ["./types"]
   },
   "include": [
     "src/**/*"
+  ],
+  "files": [
+    ".src/types/custom.d.ts"
   ]
 }
