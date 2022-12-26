@@ -1,7 +1,8 @@
 import { Request } from 'express';
 import { Passage, PassageDocument, PassageInput, PassageReviewList } from '../models/passage.model';
-import { validateParams } from '../lib/router-handler'
+import { badRequest, unauthorized, validateParams } from '../lib/router-handler'
 import { isToday, monthBefore, weekBefore, yearBefore } from '../lib/date';
+import * as ObjectsToCsv from 'objects-to-csv';
 
 export async function createPassage(req: Request): Promise<PassageDocument> {
   const { prompt, reference, text } = req.body;
@@ -21,6 +22,85 @@ export async function createPassage(req: Request): Promise<PassageDocument> {
   };
 
   return await Passage.create(passageInput);
+};
+
+export function getPassageUploadFormat(req: Request): Promise<string> {
+  let uploadType = 'json';
+  if (req.query.uploadType && typeof req.query.uploadType === 'string')
+    uploadType = req.query.uploadType;
+
+  let autoFillDates = false;
+  if (req.query.autoFillDates === 'true') autoFillDates = true;
+
+  interface DefaultPassage {
+    prompt: string;
+    reference: string;
+    text: string;
+    reviewDates?: Date[] | string[];
+  }
+
+  let defaultPassage: DefaultPassage = { prompt: '', reference: '', text: '' };
+  if (!autoFillDates) {
+    defaultPassage.reviewDates = [new Date()];
+  }
+
+  switch (uploadType) {
+    case 'json':
+      return Promise.resolve(JSON.stringify([defaultPassage], null, 2));
+    case 'csv':
+      const csv = new ObjectsToCsv([defaultPassage]);
+      return csv.toString();
+    default:
+      throw badRequest('Invalid uploadType. Expected either `json` or `csv`');
+  }
+};
+
+export async function uploadPassages(req: Request)
+: Promise<PassageDocument[]> {
+  validateParams(req, { requiredBodyParams: { fields: ['passages'] } });
+  if (!req.user || !req.user.id) throw unauthorized();
+  if (!Array.isArray(req.body.passages))
+    throw badRequest('Malformed Request. body.passages should be an array');
+
+  // Determine the date for the first passage
+  let numPassages = req.body.passages.length;
+  let now = new Date();
+  let startDate = new Date(now);
+  startDate.setDate(now.getDate() - numPassages);
+
+  // The user can set the start date but we will not accept a value that
+  // is to recent to fit all the passages in the past.
+  if (req.body.startDate) {
+    let providedStartDate = new Date(req.body.startDate);
+    if (providedStartDate < startDate) startDate = providedStartDate;
+  }
+  let endDate = new Date();
+  endDate.setDate(endDate.getDate() + numPassages);
+
+  // We will loop through the passage list in reverse so that we can
+  // add review dates as we move back in time.
+  let passageInput: PassageInput[] = [];
+  let reviewDates: Date[] = [];
+  let index = 0;
+  for (let { prompt, reference, text } of [...req.body.passages].reverse()) {
+    if (!prompt || !reference || !text)
+      throw badRequest('Malformed body. One or more entries is missing prompt, reference, or text.');
+
+    let reviewDate = new Date();
+    reviewDate.setDate(endDate.getDate() - index);
+    reviewDates.push(reviewDate)
+    passageInput.push({
+      prompt,
+      reference,
+      text,
+      user: { id: req.user.id },
+      reviewDates: [...reviewDates],
+      latestReviewDate: reviewDate,
+    })
+    ++index;
+  }
+
+  return await Promise.all(passageInput.map(el => Passage.create(el)));
 };
 
 export function getAllPassages(req: Request): Promise<PassageDocument[]> {

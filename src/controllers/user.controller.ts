@@ -13,7 +13,9 @@ export async function createUser(req: Request, res: Response)
     requiredBodyParams: {
       fields: ['firstName', 'lastName', 'email', 'password']}});
 
-  if (password.length <= 8 || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/.test(password))
+  console.log('password', password)
+  if (password.length <= 8
+    || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/.test(password))
     throw badRequest('Password must have at least 8 characters and contain 1 UPPER case letter (A-Z), 1 lowercase letter, 1 special character !@#$%^&*, 1 number 0 - 9');
 
   let passwordHash = await bcrypt.hash(password, 10);

@@ -5,6 +5,7 @@ import { userRouter } from './routers/user.router'
 import { authRouter } from './routers/auth.router'
 import { roleRouter } from './routers/role.router'
 import { passageRouter } from './routers/passage.router'
+import { settingRouter } from './routers/setting.router'
 import MongooseService from './services/mongoose.service'
 import * as cookieParser from 'cookie-parser'
 import { auth } from './controllers/auth.controller'
@@ -25,6 +26,7 @@ app.use('/auth', authRouter());
 app.use('/users', auth, userRouter());
 app.use('/roles', auth, roleRouter());
 app.use('/passages', auth, passageRouter());
+app.use('/settings', auth, settingRouter());
 
 // app.use(tokenGuard());
 

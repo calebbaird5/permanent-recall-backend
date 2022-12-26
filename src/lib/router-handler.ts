@@ -43,12 +43,12 @@ function handleParam(
   param: string | Param,
   parent: any,
 ): void {
-  let onlyOneRequired = false
+  let onlyOneRequired = false;
   let paramName = typeof param === 'string' ? param : param.name;
   if (!paramName) return;
-  if (!parent[paramName])
-    throw 'Missing required param ' + paramName;
-  else if (typeof param === 'object' && Array.isArray(param.fields)) {
+  if (!parent[paramName]) {
+    throw 'Missing required param `' + paramName + '`';
+  } else if (typeof param === 'object' && Array.isArray(param.fields)) {
     if (param.onlyOneRequired) onlyOneRequired = true;
     let errorMessage = '';
     let foundOneOfTheFields = false;
@@ -57,12 +57,11 @@ function handleParam(
         handleParam(field, parent[paramName]);
         foundOneOfTheFields = true;
       } catch (message) {
-        errorMessage = paramName + '. ' + message;
+        errorMessage = paramName + ' . ' + message;
         if (!onlyOneRequired) throw errorMessage;
       }
-      if (onlyOneRequired && !foundOneOfTheFields)
-        throw errorMessage;
     }
+    if (onlyOneRequired && !foundOneOfTheFields) throw errorMessage;
   }
 };
 
@@ -95,7 +94,7 @@ export function validateParams(
     try {
       handleParam({...requiredUrlParams, name: 'params'}, req);
     } catch (message) {
-      throw badRequest('Malformed url.' + message);
+      throw badRequest('Malformed Request URL: ' + message);
     }
   }
 
@@ -103,7 +102,7 @@ export function validateParams(
     try {
       handleParam({...requiredQueryParams, name: 'query'}, req);
     } catch (message) {
-      throw badRequest('Malformed query.' + message);
+      throw badRequest('Malformed Request Query: ' + message);
     }
   }
 
@@ -111,7 +110,7 @@ export function validateParams(
     try {
       handleParam({...requiredBodyParams, name: 'body'}, req);
     } catch (message) {
-      throw badRequest('Malformed body. ' + message);
+      throw badRequest('Malformed Request Body: ' + message);
     }
   }
 }
